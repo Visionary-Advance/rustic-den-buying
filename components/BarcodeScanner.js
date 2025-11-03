@@ -1,19 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
 
 export default function BarcodeScanner({ onScan, onClose }) {
-  const scannerRef = useRef(null);
   const html5QrCodeRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
+    let Html5Qrcode;
+    let Html5QrcodeSupportedFormats;
 
     const startScanner = async () => {
       try {
+        // Dynamically import the library (client-side only)
+        const html5QrcodeModule = await import('html5-qrcode');
+        Html5Qrcode = html5QrcodeModule.Html5Qrcode;
+        Html5QrcodeSupportedFormats = html5QrcodeModule.Html5QrcodeSupportedFormats;
+
         const html5QrCode = new Html5Qrcode('barcode-reader');
         html5QrCodeRef.current = html5QrCode;
 
@@ -22,13 +27,13 @@ export default function BarcodeScanner({ onScan, onClose }) {
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
           formatsToSupport: [
-            Html5Qrcode.BARCODE_FORMATS.UPC_A,
-            Html5Qrcode.BARCODE_FORMATS.UPC_E,
-            Html5Qrcode.BARCODE_FORMATS.UPC_EAN_EXTENSION,
-            Html5Qrcode.BARCODE_FORMATS.EAN_13,
-            Html5Qrcode.BARCODE_FORMATS.EAN_8,
-            Html5Qrcode.BARCODE_FORMATS.CODE_128,
-            Html5Qrcode.BARCODE_FORMATS.CODE_39,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
           ],
         };
 
@@ -37,6 +42,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
           config,
           (decodedText, decodedResult) => {
             if (isMounted) {
+              console.log('Barcode scanned:', decodedText);
               onScan(decodedText);
               stopScanner();
             }
@@ -54,7 +60,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
         console.error('Scanner error:', err);
         if (isMounted) {
           setError(
-            'Unable to access camera. Please ensure you have granted camera permissions.'
+            err.message || 'Unable to access camera. Please ensure you have granted camera permissions.'
           );
         }
       }
