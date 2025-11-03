@@ -9,9 +9,17 @@ export default function CameraTest() {
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState('');
   const [isCameraOn, setIsCameraOn] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Check if we're on the client side
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Get list of available cameras
   const getDevices = async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) return;
+
     try {
       const deviceList = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = deviceList.filter(device => device.kind === 'videoinput');
@@ -27,6 +35,11 @@ export default function CameraTest() {
 
   // Start camera
   const startCamera = async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
+      setError('Media devices API not available');
+      return;
+    }
+
     try {
       setError(null);
 
@@ -70,14 +83,16 @@ export default function CameraTest() {
 
   // Cleanup on unmount
   useEffect(() => {
-    getDevices();
+    if (isClient) {
+      getDevices();
+    }
 
     return () => {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, []);
+  }, [isClient]);
 
   // Restart camera when device changes
   useEffect(() => {
@@ -86,6 +101,17 @@ export default function CameraTest() {
       setTimeout(() => startCamera(), 100);
     }
   }, [selectedDevice]);
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-zinc-600 dark:text-zinc-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-12 px-4">
@@ -111,17 +137,17 @@ export default function CameraTest() {
           </h2>
           <div className="space-y-2 text-sm">
             <p className="text-zinc-600 dark:text-zinc-400">
-              <strong>Browser:</strong> {navigator.userAgent}
+              <strong>Browser:</strong> {typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown'}
             </p>
             <p className="text-zinc-600 dark:text-zinc-400">
-              <strong>Protocol:</strong> {window.location.protocol}
-              {window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && (
+              <strong>Protocol:</strong> {typeof window !== 'undefined' ? window.location.protocol : 'Unknown'}
+              {typeof window !== 'undefined' && window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && (
                 <span className="text-red-600 ml-2">⚠️ Camera requires HTTPS</span>
               )}
             </p>
             <p className="text-zinc-600 dark:text-zinc-400">
               <strong>MediaDevices API:</strong>{' '}
-              {navigator.mediaDevices ? '✅ Supported' : '❌ Not supported'}
+              {typeof navigator !== 'undefined' && navigator.mediaDevices ? '✅ Supported' : '❌ Not supported'}
             </p>
           </div>
         </div>
