@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Rustic Den Buying
 
-## Getting Started
+A Next.js web application for buying DVDs and media. Users can scan barcodes or enter UPC codes to instantly see product information and purchase pricing based on current inventory levels.
 
-First, run the development server:
+## Features
+
+- **Manual UPC Entry**: Type in UPC codes directly
+- **Barcode Scanning**: Use your device camera to scan barcodes on DVD cases
+- **Real-time Product Lookup**: Integration with UPC Database API
+- **Dynamic Pricing**: Purchase prices adjust based on inventory levels
+  - High demand items (0-5 in stock): $8.00
+  - Medium demand items (6-15 in stock): $5.00
+  - Low demand items (16-30 in stock): $3.00
+  - Oversupplied items (30+ in stock): $1.00
+
+## Setup
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Configure API Key
+
+Get your API key from [UPC Database](https://upcdatabase.org/account/api), then add it to `.env.local`:
+
+```bash
+UPC_API_KEY=your_api_key_here
+```
+
+### 3. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+app/
+├── api/
+│   ├── lookup-upc/    # UPC Database API integration
+│   └── pricing/       # Pricing calculation endpoint
+├── layout.js          # Root layout with metadata
+└── page.js            # Main application page
 
-## Learn More
+components/
+├── SearchInput.js     # Manual UPC entry component
+├── BarcodeScanner.js  # Camera-based barcode scanning
+└── ProductDisplay.js  # Product information and pricing display
 
-To learn more about Next.js, take a look at the following resources:
+lib/
+└── inventory.js       # Inventory management and pricing logic
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How It Works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. User enters a UPC code or scans a barcode
+2. App queries UPC Database API for product information
+3. App checks local inventory to determine pricing tier
+4. Product information and purchase price are displayed
+
+## Camera Permissions
+
+The barcode scanner requires camera access. When you first use the scan feature, your browser will prompt you to allow camera permissions.
+
+## Build for Production
+
+```bash
+npm run build
+npm start
+```
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The easiest way to deploy is using [Vercel](https://vercel.com/new). Make sure to add your `UPC_API_KEY` environment variable in the Vercel project settings.
+# rustic-den-buying
