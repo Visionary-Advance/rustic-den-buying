@@ -37,26 +37,31 @@ export default function BarcodeScanner({ onScan, onClose }) {
         Html5Qrcode = html5QrcodeModule.Html5Qrcode;
         Html5QrcodeSupportedFormats = html5QrcodeModule.Html5QrcodeSupportedFormats;
 
-        const html5QrCode = new Html5Qrcode('barcode-reader', {
-          verbose: true,
+        const html5QrCode = new Html5Qrcode('barcode-reader', { verbose: false });
+        html5QrCodeRef.current = html5QrCode;
+
+        const config = {
+          fps: 20,
+          qrbox: function(viewfinderWidth, viewfinderHeight) {
+            // Make scan area 80% of the video width and appropriate height for barcodes
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const qrboxWidth = Math.floor(viewfinderWidth * 0.8);
+            const qrboxHeight = Math.floor(minEdge * 0.3);
+            return { width: qrboxWidth, height: qrboxHeight };
+          },
+          aspectRatio: 1.777778, // 16:9
+          disableFlip: false,
           formatsToSupport: [
             Html5QrcodeSupportedFormats.UPC_A,
             Html5QrcodeSupportedFormats.UPC_E,
-            Html5QrcodeSupportedFormats.UPC_EAN_EXTENSION,
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.EAN_8,
             Html5QrcodeSupportedFormats.CODE_128,
             Html5QrcodeSupportedFormats.CODE_39,
-            Html5QrcodeSupportedFormats.CODE_93,
           ],
-        });
-        html5QrCodeRef.current = html5QrCode;
-
-        const config = {
-          fps: 10,
-          qrbox: { width: 300, height: 150 },
-          aspectRatio: 2.0,
-          disableFlip: false,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          }
         };
 
         await html5QrCode.start(
@@ -64,15 +69,18 @@ export default function BarcodeScanner({ onScan, onClose }) {
           config,
           (decodedText, decodedResult) => {
             if (isMounted && decodedText !== lastScan) {
-              console.log('Barcode scanned:', decodedText);
-              console.log('Barcode format:', decodedResult.result.format);
+              console.log('✅ Barcode scanned:', decodedText);
+              console.log('Format:', decodedResult.result?.format?.formatName || decodedResult.result?.format);
               setLastScan(decodedText);
               onScan(decodedText);
               stopScanner();
             }
           },
           (errorMessage) => {
-            // Ignore scanning errors (they're frequent and normal)
+            // Log only occasionally to debug
+            if (Math.random() < 0.01) {
+              console.log('Scanning...');
+            }
           }
         );
 
@@ -142,17 +150,19 @@ export default function BarcodeScanner({ onScan, onClose }) {
             />
             <div className="space-y-2">
               <p className="text-center text-zinc-600 dark:text-zinc-400 font-semibold">
-                Position the barcode within the green box
+                Position the UPC barcode within the scanning area
               </p>
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-3">
                 <p className="text-sm text-blue-700 dark:text-blue-400">
-                  <strong>Tips:</strong>
+                  <strong>Scanning tips for UPC barcodes:</strong>
                 </p>
-                <ul className="text-xs text-blue-600 dark:text-blue-500 list-disc list-inside mt-1">
-                  <li>Hold steady and ensure good lighting</li>
-                  <li>Keep the barcode horizontal</li>
-                  <li>Distance: about 6-10 inches from camera</li>
-                  <li>Make sure the entire barcode is visible</li>
+                <ul className="text-xs text-blue-600 dark:text-blue-500 list-disc list-inside mt-1 space-y-1">
+                  <li><strong>Brightness:</strong> Ensure bright, even lighting (no shadows or glare)</li>
+                  <li><strong>Orientation:</strong> Keep barcode perfectly horizontal</li>
+                  <li><strong>Distance:</strong> Start far (12 inches) and slowly move closer</li>
+                  <li><strong>Stability:</strong> Hold very steady or rest device on surface</li>
+                  <li><strong>Entire barcode:</strong> All lines must be visible in the box</li>
+                  <li><strong>Focus:</strong> Wait 1-2 seconds for camera to focus</li>
                 </ul>
               </div>
               {lastScan && (
